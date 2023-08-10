@@ -3,18 +3,17 @@
 const keytokenModel = require("../models/keytoken.model")
 
 class KeyTokenService{
-    static createToken = async ({userId, publicKey}) => {
+    static createToken = async ({userId, publicKey, privateKey}) => {
         try {
             const publicKeyString = publicKey
-            console.log('bat dau insert vo collection key ')
 
             const token = await keytokenModel.create({
                 userId: userId,
-                publicKey: publicKeyString
+                publicKey: publicKeyString,
+                privateKey: privateKey
             })
 
-            console.log('token tạo ra table ', token)
-            return token ? publicKeyString : null
+            return token ? token.publicKey : null
         } catch (error) {
             console.log('error token tạo ra table ', error)
 

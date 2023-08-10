@@ -3,8 +3,9 @@ const KeyTokenService = require('./keytoken.service')
 const { createTokenPair } = require('../auth/authUtils')
 
 const shopModel = require("../models/shop.model")
+const {getInfoData} = require('../utils/index')
 const bcrypt = require('bcrypt')
-const crypto = require('crypto')
+const crypto = require('node:crypto')
 const { Schema, Mongoose, mongo, default: mongoose } = require('mongoose')
 
 const RoleShop = {
@@ -40,37 +41,31 @@ class AccessService{
                 const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
                     modulusLength: 4096,
                     publicKeyEncoding: {
-                      type: 'spki',
+                      type: 'pkcs1',
                       format: 'pem',
                     },
                     privateKeyEncoding: {
-                      type: 'pkcs8',
-                      format: 'pem',
-                      cipher: 'aes-256-cbc',
-                      passphrase: 'top secret',
+                      type: 'pkcs1',
+                      format: 'pem'
                     },
                   })
-                  
+
                   */
 
-                  //test 
-                  const publicKey = '123434'
-                  const privateKey = '2342342'
-               // console.log({privateKey, publicKey})
-                console.log('public key', publicKey)
-
+                const privateKey = crypto.randomBytes(64).toString('hex')
+                const publicKey = crypto.randomBytes(64).toString('hex')  
+            
+                console.log({privateKey, publicKey})
+                
                 var ObjectId = mongoose.Types.ObjectId
                 const shopId = new ObjectId(newShop._id)
                 console.log('userId ', shopId)
 
-                const publicKeyString = KeyTokenService.createToken({
+                const publicKeyString = await KeyTokenService.createToken({
                     userId: shopId,
-                    publicKey
+                    publicKey,
+                    privateKey
                 })
-
-                if(publicKeyString){
-                    console.log('tạo public key success: ', publicKeyString)
-                }
 
                 if(!publicKeyString){
                     return {
@@ -79,14 +74,17 @@ class AccessService{
                     }
                 }
 
-                const tokens = createTokenPair({userId: newShop._id, email}, privateKey, publicKeyString)
+                console.log('::publickeystring::', publicKeyString)
+                //const publicKeyObject = crypto.createPublicKey(publicKey)
+
+                const tokens = createTokenPair({userId: newShop._id, email}, privateKey, publicKey)
                 console.log('tạo token success: ', tokens)
 
                 return {
                     code: 201,
                     metadata: {
-                        shop: newShop,
-                        tokens
+                        shop: getInfoData({fields: ['_id', "name", "email"], object: newShop}),
+                        tokens: await tokens
                     }
                 }
             }
